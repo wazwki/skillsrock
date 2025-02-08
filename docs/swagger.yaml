@@ -1,0 +1,306 @@
+basePath: /v1
+definitions:
+  domain.Analyse:
+    properties:
+      average_time:
+        type: integer
+      done:
+        type: integer
+      in_progress:
+        type: integer
+      pending:
+        type: integer
+      weekly:
+        $ref: '#/definitions/domain.WeeklyReport'
+    type: object
+  domain.Task:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  domain.WeeklyReport:
+    properties:
+      completed:
+        type: integer
+      uncompleted:
+        type: integer
+    type: object
+host: localhost
+info:
+  contact: {}
+  description: Skillsrock API documentation
+  termsOfService: http://swagger.io/terms/
+  title: Skillsrock API
+  version: "1.0"
+paths:
+  /api/v1/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Get analytics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Analyse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get analytics
+      tags:
+      - Analytics
+  /api/v1/tasks:
+    get:
+      consumes:
+      - application/json
+      description: Get tasks
+      parameters:
+      - description: Status
+        in: query
+        name: status
+        type: string
+      - description: Sort by
+        in: query
+        name: sort_by
+        type: string
+      - description: Priority
+        in: query
+        name: priority
+        type: string
+      - description: Name
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get tasks
+      tags:
+      - Tasks
+    post:
+      consumes:
+      - application/json
+      description: Create task
+      parameters:
+      - description: Task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Task'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create task
+      tags:
+      - Tasks
+  /api/v1/tasks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete task
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete task
+      tags:
+      - Tasks
+    put:
+      consumes:
+      - application/json
+      description: Update task
+      parameters:
+      - description: Task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Task'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Task'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update task
+      tags:
+      - Tasks
+  /api/v1/tasks/export:
+    get:
+      consumes:
+      - application/json
+      description: Export tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Export tasks
+      tags:
+      - Tasks
+  /api/v1/tasks/import:
+    post:
+      consumes:
+      - application/json
+      description: Import tasks
+      parameters:
+      - description: Tasks
+        in: body
+        name: tasks
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/domain.Task'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Import tasks
+      tags:
+      - Tasks
+  /api/v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Register user
+      parameters:
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/domain.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register user
+      tags:
+      - Users
+  /api/v1/users/login:
+    post:
+      consumes:
+      - application/json
+      description: Login user
+      parameters:
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/domain.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Login user
+      tags:
+      - Users
+swagger: "2.0"
