@@ -23,7 +23,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
       - REDIS_NUMBER=0
-      - DEBUG=true
+      - DEBUG=${DEBUG}
     depends_on:
       - postgres
       - redis

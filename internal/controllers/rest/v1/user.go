@@ -28,7 +28,7 @@ func NewUserControllers(s service.UserServiceInterface) rest.UserControllersInte
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /api/v1/auth/register [post]
-func (s *UserServer) Register(c echo.Context) error { // Service
+func (s *UserServer) Register(c echo.Context) error {
 	var user *domain.UserRequest
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
@@ -52,7 +52,7 @@ func (s *UserServer) Register(c echo.Context) error { // Service
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /api/v1/auth/login [post]
-func (s *UserServer) Login(c echo.Context) error { // Service
+func (s *UserServer) Login(c echo.Context) error {
 	var user *domain.UserRequest
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})

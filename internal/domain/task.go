@@ -9,8 +9,8 @@ type Task struct {
 	Status      string
 	Priority    string
 	Due_date    time.Time
-	CreatedAt   string
-	UpdatedAt   string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type TaskResponse struct {
@@ -51,13 +51,15 @@ func TaskToTaskResponse(task *Task) *TaskResponse {
 		Status:      task.Status,
 		Priority:    task.Priority,
 		Due_date:    task.Due_date.Format("2006-01-02 15:04:05"),
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
+		CreatedAt:   task.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:   task.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 
 func TaskFromTaskResponse(task *TaskResponse) *Task {
 	parsedTime, _ := time.Parse("2006-01-02 15:04:05", task.Due_date)
+	createdAt, _ := time.Parse("2006-01-02 15:04:05", task.CreatedAt)
+	updatedAt, _ := time.Parse("2006-01-02 15:04:05", task.UpdatedAt)
 	return &Task{
 		ID:          task.ID,
 		Title:       task.Title,
@@ -65,8 +67,8 @@ func TaskFromTaskResponse(task *TaskResponse) *Task {
 		Status:      task.Status,
 		Priority:    task.Priority,
 		Due_date:    parsedTime,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }
 
@@ -78,10 +80,10 @@ type TaskFilter struct {
 }
 
 type Analyse struct {
-	Done        int `json:"done"`
-	InProgress  int `json:"in_progress"`
-	Pending     int `json:"pending"`
-	AverageTime int `json:"average_time"`
+	Done        int     `json:"done"`
+	InProgress  int     `json:"in_progress"`
+	Pending     int     `json:"pending"`
+	AverageTime float64 `json:"average_time"`
 	Weekly      WeeklyReport
 }
 

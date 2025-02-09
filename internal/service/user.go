@@ -6,6 +6,8 @@ import (
 	"github.com/wazwki/skillsrock/internal/domain"
 	"github.com/wazwki/skillsrock/internal/repository"
 	"github.com/wazwki/skillsrock/pkg/hashutil"
+	"github.com/wazwki/skillsrock/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type UserService struct {
@@ -19,6 +21,7 @@ func NewUserService(repo repository.UserRepositoryInterface) UserServiceInterfac
 func (s *UserService) CreateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	hashed, err := hashutil.HashPassword(user.Password)
 	if err != nil {
+		logger.Error("Failed to hash password", zap.Error(err), zap.String("module", "skillsrock"))
 		return nil, err
 	}
 	user.Password = hashed
@@ -29,6 +32,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *domain.User) (*domai
 func (s *UserService) CheckUser(ctx context.Context, user *domain.User) error {
 	dbUser, err := s.repo.CheckUser(ctx, user)
 	if err != nil {
+		logger.Error("Failed to check user", zap.Error(err), zap.String("module", "skillsrock"))
 		return err
 	}
 

@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/wazwki/skillsrock/internal/domain"
@@ -32,21 +34,27 @@ func (r *TaskRepository) CreateTask(ctx context.Context, task *domain.Task) (str
 
 func (r *TaskRepository) GetTasks(ctx context.Context, filter domain.TaskFilter) ([]*domain.Task, error) {
 	query := `SELECT id, title, description, status, priority, due_date, created_at, updated_at FROM tasks WHERE 1=1`
-	args := make([]interface{}, 0)
-
-	if filter.Name != "" {
-		query += " AND title = $1"
-		args = append(args, filter.Name)
-	}
 
 	if filter.Status != "" {
-		query += " AND status = $2"
-		args = append(args, filter.Status)
+		switch filter.Status {
+		case "pending":
+			query += " AND status = 'pending'"
+		case "in_progress":
+			query += " AND status = 'in_progress'"
+		case "done":
+			query += " AND status = 'done'"
+		}
 	}
 
 	if filter.Priority != "" {
-		query += " AND priority = $3"
-		args = append(args, filter.Priority)
+		switch filter.Priority {
+		case "low":
+			query += " AND priority = 'low'"
+		case "medium":
+			query += " AND priority = 'medium'"
+		case "high":
+			query += " AND priority = 'high'"
+		}
 	}
 
 	if filter.SortBy != "" {
@@ -58,9 +66,19 @@ func (r *TaskRepository) GetTasks(ctx context.Context, filter domain.TaskFilter)
 		}
 	}
 
-	rows, err := r.DataBase.Query(ctx, query, args...)
-	if err != nil {
-		return nil, err
+	var rows pgx.Rows
+	var err error
+	if filter.Name != "" {
+		query += " AND title = $1"
+		rows, err = r.DataBase.Query(ctx, query, filter.Name)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rows, err = r.DataBase.Query(ctx, query)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	defer rows.Close()
@@ -110,14 +128,13 @@ func (r *TaskRepository) ClearTasks(ctx context.Context) error {
 
 func (r *TaskRepository) GetCachedAnalytics(ctx context.Context) (*domain.Analyse, error) {
 	val, err := r.Cache.Get(ctx, "analytics").Result()
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		return nil, err
 	}
 
-	if val == "" {
+	if err == redis.Nil {
 		return r.GetAnalytics(ctx)
 	}
-
 	task := &domain.Analyse{}
 	err = json.Unmarshal([]byte(val), task)
 	if err != nil {
@@ -176,16 +193,22 @@ func (r *TaskRepository) GetAnalytics(ctx context.Context) (*domain.Analyse, err
 	}
 
 	query = `SELECT AVG(created_at - due_date) FROM tasks WHERE status = 'done'`
-	err = r.DataBase.QueryRow(ctx, query).Scan(&analyse.AverageTime)
+	var avgTime sql.NullFloat64
+	err = r.DataBase.QueryRow(ctx, query).Scan(&avgTime)
 	if err != nil {
 		return nil, err
+	}
+
+	if avgTime.Valid {
+		analyse.AverageTime = avgTime.Float64
+	} else {
+		analyse.AverageTime = 0
 	}
 
 	return &analyse, nil
 }
 
 func (r *TaskRepository) SetAnalytics(ctx context.Context, task *domain.Analyse) error {
-
 	data, err := json.Marshal(*task)
 	if err != nil {
 		return err
