@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,14 +53,14 @@ func New(cfg *config.Config) (*App, error) {
 	jwt := jwtutil.NewJWTUtil(jwtutil.Config{
 		AccessTokenSecret:  []byte(cfg.AccessTokenSecret),
 		RefreshTokenSecret: []byte(cfg.RefreshTokenSecret),
-		AccessTokenTTL:     time.Duration(cfg.AccessTokenTTL) * time.Minute,
-		RefreshTokenTTL:    time.Duration(cfg.RefreshTokenTTL) * time.Minute,
+		AccessTokenTTL:     time.Duration(cfg.AccessTokenTTL) * time.Second,
+		RefreshTokenTTL:    time.Duration(cfg.RefreshTokenTTL) * time.Second,
 	})
 
 	srv := rest.NewEchoServer(cfg, jwt)
 	routes.RegisterRoutes(srv, taskControllers, userControllers)
 
-	return &App{server: srv}, nil
+	return &App{server: srv, migrateDSN: cfg.DBdsn, pool: pool}, nil
 }
 
 func (a *App) Run() error {
@@ -85,7 +84,7 @@ func (a *App) Stop() error {
 	a.pool.Close()
 
 	if err := a.server.Shutdown(ctx); err != nil {
-		fmt.Println(err.Error())
+		logger.Error("Fail to shutdown server", zap.Error(err), zap.String("module", "skillsrock"))
 		return err
 	}
 

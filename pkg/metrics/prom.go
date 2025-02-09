@@ -11,7 +11,7 @@ var (
 			Help:    "Duration of HTTP requests.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"handler"},
+		[]string{"method", "path"},
 	)
 )
 

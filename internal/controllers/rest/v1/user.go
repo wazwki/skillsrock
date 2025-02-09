@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/wazwki/skillsrock/internal/controllers/rest"
@@ -24,23 +23,23 @@ func NewUserControllers(s service.UserServiceInterface) rest.UserControllersInte
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param user body domain.User true "User"
-// @Success 201 {object} domain.User
+// @Param user body domain.UserRequest true "User"
+// @Success 201 {object} domain.UserResponse
 // @Failure 400 {object} string
 // @Failure 500 {object} string
-// @Router /api/v1/users [post]
-func (s *UserServer) Register(c echo.Context) error {
-	var user *domain.User
-	if err := json.NewDecoder(c.Request().Body).Decode(user); err != nil {
+// @Router /api/v1/auth/register [post]
+func (s *UserServer) Register(c echo.Context) error { // Service
+	var user *domain.UserRequest
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
 	}
 
-	createdUser, err := s.service.CreateUser(c.Request().Context(), user)
+	createdUser, err := s.service.CreateUser(c.Request().Context(), domain.UserRequestToUser(user))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create user"})
 	}
 
-	return c.JSON(http.StatusCreated, createdUser)
+	return c.JSON(http.StatusCreated, domain.UserToUserResponse(createdUser))
 }
 
 // @Summary Login user
@@ -48,29 +47,21 @@ func (s *UserServer) Register(c echo.Context) error {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param user body domain.User true "User"
+// @Param user body domain.UserRequest true "User"
 // @Success 200 {object} nil
 // @Failure 400 {object} string
 // @Failure 500 {object} string
-// @Router /api/v1/users/login [post]
-func (s *UserServer) Login(c echo.Context) error {
-	var user *domain.User
-	if err := json.NewDecoder(c.Request().Body).Decode(user); err != nil {
+// @Router /api/v1/auth/login [post]
+func (s *UserServer) Login(c echo.Context) error { // Service
+	var user *domain.UserRequest
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
 	}
 
-	err := s.service.CheckUser(c.Request().Context(), user)
+	err := s.service.CheckUser(c.Request().Context(), domain.UserRequestToUser(user))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "User not found"})
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "User not found"})
 	}
-
-	c.SetCookie(&http.Cookie{
-		Name:     "Authorization",
-		Value:    c.Get("Authorization").(string),
-		Expires:  time.Now().Add(time.Hour * 24),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
 
 	return c.NoContent(http.StatusOK)
 }

@@ -9,6 +9,8 @@ services:
     environment:
       - JWT_ACCESS_SECRET=your_access_secret
       - JWT_REFRESH_SECRET=your_refresh_secret
+      - ACCESS_TOKEN_TTL=3600
+      - REFRESH_TOKEN_TTL=86400
       - LOG_LEVEL=info
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -17,6 +19,11 @@ services:
       - DB_NAME=sdb
       - HOST=0.0.0.0
       - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_NUMBER=0
+      - DEBUG=true
     depends_on:
       - postgres
       - redis

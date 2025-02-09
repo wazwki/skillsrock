@@ -14,6 +14,7 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/skillsrock /app/skillsrock
+COPY /db/postgres/migrations /app/db/postgres/migrations
 
 EXPOSE ${PORT}
 

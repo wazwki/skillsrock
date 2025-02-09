@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/wazwki/skillsrock/internal/controllers/rest"
@@ -23,14 +24,14 @@ func NewTaskControllers(s service.TaskServiceInterface) rest.TaskControllersInte
 // @Tags Tasks
 // @Accept json
 // @Produce json
-// @Param status query string false "Status"
-// @Param sort_by query string false "Sort by"
-// @Param priority query string false "Priority"
-// @Param name query string false "Name"
-// @Success 200 {object} []domain.Task
+// @Param status query string false "Choose status: pending, in_progress, done"
+// @Param sort_by query string false "Choose sort by date: low, high"
+// @Param priority query string false "Choose priority: low, medium, high"
+// @Param name query string false "Choose name"
+// @Success 200 {object} []domain.TaskResponse
 // @Failure 500 {object} string
 // @Router /api/v1/tasks [get]
-func (s *TaskServer) GetTasks(c echo.Context) error {
+func (s *TaskServer) GetTasks(c echo.Context) error { // Service
 	status := c.QueryParam("status")
 	sortBy := c.QueryParam("sort_by")
 	priority := c.QueryParam("priority")
@@ -43,11 +44,16 @@ func (s *TaskServer) GetTasks(c echo.Context) error {
 		Name:     name,
 	})
 
+	var tasksR []*domain.TaskResponse
+	for _, task := range tasks {
+		tasksR = append(tasksR, domain.TaskToTaskResponse(task))
+	}
+
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to get tasks"})
 	}
 
-	return c.JSON(http.StatusOK, tasks)
+	return c.JSON(http.StatusOK, tasksR)
 }
 
 // @Summary Create task
@@ -55,20 +61,20 @@ func (s *TaskServer) GetTasks(c echo.Context) error {
 // @Tags Tasks
 // @Accept json
 // @Produce json
-// @Param task body domain.Task true "Task"
+// @Param task body domain.TaskRequest true "Task"
 // @Success 201 {object} string
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /api/v1/tasks [post]
-func (s *TaskServer) CreateTask(c echo.Context) error {
-	var task *domain.Task
+func (s *TaskServer) CreateTask(c echo.Context) error { // Service
+	var task *domain.TaskRequest
 
-	err := json.NewDecoder(c.Request().Body).Decode(task)
+	err := json.NewDecoder(c.Request().Body).Decode(&task)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
 	}
 
-	id, err := s.service.CreateTask(c.Request().Context(), task)
+	id, err := s.service.CreateTask(c.Request().Context(), domain.TaskFromTaskRequest(task))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create task"})
 	}
@@ -81,25 +87,35 @@ func (s *TaskServer) CreateTask(c echo.Context) error {
 // @Tags Tasks
 // @Accept json
 // @Produce json
-// @Param task body domain.Task true "Task"
-// @Success 200 {object} domain.Task
+// @Param task body domain.TaskRequest true "Task"
+// @Param id path string true "ID"
+// @Success 200 {object} domain.TaskResponse
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /api/v1/tasks/{id} [put]
-func (s *TaskServer) UpdateTask(c echo.Context) error {
-	var task *domain.Task
+func (s *TaskServer) UpdateTask(c echo.Context) error { // Service
+	var task *domain.TaskRequest
 
-	err := json.NewDecoder(c.Request().Body).Decode(task)
+	ids := c.Param("id")
+	id, err := strconv.Atoi(ids)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
 	}
 
-	uTask, err := s.service.UpdateTask(c.Request().Context(), task)
+	err = json.NewDecoder(c.Request().Body).Decode(&task)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
+	}
+
+	dTask := domain.TaskFromTaskRequest(task)
+	dTask.ID = id
+
+	uTask, err := s.service.UpdateTask(c.Request().Context(), dTask)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update task"})
 	}
 
-	return c.JSON(http.StatusOK, uTask)
+	return c.JSON(http.StatusOK, domain.TaskToTaskResponse(uTask))
 }
 
 // @Summary Delete task
@@ -145,20 +161,27 @@ func (s *TaskServer) GetAnalytics(c echo.Context) error {
 // @Tags Tasks
 // @Accept json
 // @Produce json
-// @Param tasks body []domain.Task true "Tasks"
+// @Param tasks body []domain.TaskRequest true "Tasks"
 // @Success 200 {object} nil
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /api/v1/tasks/import [post]
-func (s *TaskServer) ImportTasks(c echo.Context) error {
-	var tasks []*domain.Task
+func (s *TaskServer) ImportTasks(c echo.Context) error { // Service
+	var tasks []*domain.TaskRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&tasks)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
 	}
 
-	err = s.service.ImportTasks(c.Request().Context(), tasks)
+	tasksD := make([]*domain.Task, len(tasks))
+
+	for _, task := range tasks {
+		data := domain.TaskFromTaskRequest(task)
+		tasksD = append(tasksD, data)
+	}
+
+	err = s.service.ImportTasks(c.Request().Context(), tasksD)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to import tasks"})
 	}
@@ -171,14 +194,18 @@ func (s *TaskServer) ImportTasks(c echo.Context) error {
 // @Tags Tasks
 // @Accept json
 // @Produce json
-// @Success 200 {object} []domain.Task
+// @Success 200 {object} []domain.TaskResponse
 // @Failure 500 {object} string
 // @Router /api/v1/tasks/export [get]
-func (s *TaskServer) ExportTasks(c echo.Context) error {
+func (s *TaskServer) ExportTasks(c echo.Context) error { // Service
 	tasks, err := s.service.ExportTasks(c.Request().Context())
+	tasksR := make([]*domain.TaskResponse, len(tasks))
+	for _, task := range tasks {
+		tasksR = append(tasksR, domain.TaskToTaskResponse(task))
+	}
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to export tasks"})
 	}
 
-	return c.JSON(http.StatusOK, tasks)
+	return c.JSON(http.StatusOK, tasksR)
 }

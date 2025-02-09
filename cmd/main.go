@@ -9,8 +9,6 @@ import (
 	_ "github.com/wazwki/skillsrock/docs"
 	"github.com/wazwki/skillsrock/internal/app"
 	"github.com/wazwki/skillsrock/internal/config"
-
-	"github.com/joho/godotenv"
 )
 
 // @title Skillsrock API
@@ -18,14 +16,8 @@ import (
 // @description Skillsrock API documentation
 // @termsOfService http://swagger.io/terms/
 
-// @host localhost
-// @BasePath /v1
-
-func init() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("[ERROR] Can't load environment: %s", err.Error())
-	}
-}
+// @host localhost:8080
+// @BasePath
 
 func main() {
 	cfg, err := config.LoadFromEnv()

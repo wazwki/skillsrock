@@ -31,29 +31,29 @@ func (r *TaskRepository) CreateTask(ctx context.Context, task *domain.Task) (str
 }
 
 func (r *TaskRepository) GetTasks(ctx context.Context, filter domain.TaskFilter) ([]*domain.Task, error) {
-	query := `SELECT id, title, description, status, priority, due_date FROM tasks WHERE 1=1`
+	query := `SELECT id, title, description, status, priority, due_date, created_at, updated_at FROM tasks WHERE 1=1`
 	args := make([]interface{}, 0)
 
+	if filter.Name != "" {
+		query += " AND title = $1"
+		args = append(args, filter.Name)
+	}
+
 	if filter.Status != "" {
-		query += " AND status = $1"
+		query += " AND status = $2"
 		args = append(args, filter.Status)
 	}
 
 	if filter.Priority != "" {
-		query += " AND priority = $2"
+		query += " AND priority = $3"
 		args = append(args, filter.Priority)
-	}
-
-	if filter.Name != "" {
-		query += " AND title = $3"
-		args = append(args, filter.Name)
 	}
 
 	if filter.SortBy != "" {
 		switch filter.SortBy {
 		case "low":
 			query += " ORDER BY due_date ASC"
-		case "max":
+		case "high":
 			query += " ORDER BY due_date DESC"
 		}
 	}
@@ -68,7 +68,7 @@ func (r *TaskRepository) GetTasks(ctx context.Context, filter domain.TaskFilter)
 	tasks := make([]*domain.Task, 0)
 	for rows.Next() {
 		task := &domain.Task{}
-		err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date)
+		err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date, &task.CreatedAt, &task.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -80,8 +80,10 @@ func (r *TaskRepository) GetTasks(ctx context.Context, filter domain.TaskFilter)
 }
 
 func (r *TaskRepository) UpdateTask(ctx context.Context, task *domain.Task) (*domain.Task, error) {
-	query := `UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, due_date = $5 WHERE id = $6 RETURNING id, title, description, status, priority, due_date`
-	err := r.DataBase.QueryRow(ctx, query, task.Title, task.Description, task.Status, task.Priority, task.Due_date, task.ID).Scan(&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date)
+	query := `UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, due_date = $5 WHERE id = $6 
+	RETURNING id, title, description, status, priority, due_date, created_at, updated_at`
+	err := r.DataBase.QueryRow(ctx, query, task.Title, task.Description, task.Status, task.Priority, task.Due_date, task.ID).Scan(
+		&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +112,10 @@ func (r *TaskRepository) GetCachedAnalytics(ctx context.Context) (*domain.Analys
 	val, err := r.Cache.Get(ctx, "analytics").Result()
 	if err != nil {
 		return nil, err
+	}
+
+	if val == "" {
+		return r.GetAnalytics(ctx)
 	}
 
 	task := &domain.Analyse{}
@@ -215,7 +221,7 @@ func (r *TaskRepository) ImportTasks(ctx context.Context, task []*domain.Task) e
 }
 
 func (r *TaskRepository) ExportTasks(ctx context.Context) ([]*domain.Task, error) {
-	query := `SELECT id, title, description, status, priority, due_date FROM tasks`
+	query := `SELECT id, title, description, status, priority, due_date, created_at, updated_at FROM tasks`
 	rows, err := r.DataBase.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -226,7 +232,7 @@ func (r *TaskRepository) ExportTasks(ctx context.Context) ([]*domain.Task, error
 	tasks := make([]*domain.Task, 0)
 	for rows.Next() {
 		task := &domain.Task{}
-		err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date)
+		err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.Due_date, &task.CreatedAt, &task.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

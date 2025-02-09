@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -24,7 +25,15 @@ func JWTMiddleware(cfg *config.Config, jwt *jwtutil.JWTUtil) echo.MiddlewareFunc
 				if err != nil {
 					return err
 				}
-				c.Set("Authorization", "Bearer "+token)
+
+				c.SetCookie(&http.Cookie{
+					Name:     "Authorization",
+					Value:    token,
+					Expires:  time.Now().Add(time.Second * time.Duration(cfg.AccessTokenTTL)),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
+
 				return next(c)
 			}
 

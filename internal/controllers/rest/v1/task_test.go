@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestGetTasks(t *testing.T) {
 	e := echo.New()
 	mockService := new(MockTaskService)
 	controller := v1.NewTaskControllers(mockService)
-	tasks := []*domain.Task{{ID: 1, Title: "Test Task", Description: "Test Description", Status: "Pending", Priority: "High", Due_date: "2025-12-01", CreatedAt: "2025-01-01", UpdatedAt: "2025-01-02"}}
+	tasks := []*domain.Task{{ID: 1, Title: "Test Task", Description: "Test Description", Status: "Pending", Priority: "High", Due_date: time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC)}}
 	mockService.On("GetTasks", mock.Anything, mock.Anything).Return(tasks, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/tasks", nil)
@@ -74,7 +75,7 @@ func TestCreateTask(t *testing.T) {
 	e := echo.New()
 	mockService := new(MockTaskService)
 	controller := v1.NewTaskControllers(mockService)
-	task := &domain.Task{ID: 2, Title: "New Task", Description: "New Description", Status: "InProgress", Priority: "Medium", Due_date: "2025-12-10", CreatedAt: "2025-02-01", UpdatedAt: "2025-02-02"}
+	task := &domain.Task{ID: 2, Title: "New Task", Description: "New Description", Status: "InProgress", Priority: "Medium", Due_date: time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC)}
 	mockService.On("CreateTask", mock.Anything, task).Return("123", nil)
 
 	body, _ := json.Marshal(task)
@@ -92,7 +93,7 @@ func TestUpdateTask(t *testing.T) {
 	e := echo.New()
 	mockService := new(MockTaskService)
 	controller := v1.NewTaskControllers(mockService)
-	task := &domain.Task{ID: 2, Title: "Updated Task", Description: "Updated Description", Status: "Done", Priority: "Low", Due_date: "2025-12-10", CreatedAt: "2025-02-01", UpdatedAt: "2025-02-02"}
+	task := &domain.Task{ID: 2, Title: "Updated Task", Description: "Updated Description", Status: "Done", Priority: "Low", Due_date: time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC)}
 	mockService.On("UpdateTask", mock.Anything, task).Return(task, nil)
 
 	body, _ := json.Marshal(task)
@@ -160,7 +161,7 @@ func TestExportTasks(t *testing.T) {
 	e := echo.New()
 	mockService := new(MockTaskService)
 	controller := v1.NewTaskControllers(mockService)
-	tasks := []*domain.Task{{ID: 1, Title: "Exported Task", Description: "Exported Description", Status: "Done", Priority: "Low", Due_date: "2025-11-15", CreatedAt: "2025-03-01", UpdatedAt: "2025-03-02"}}
+	tasks := []*domain.Task{{ID: 1, Title: "Exported Task", Description: "Exported Description", Status: "Done", Priority: "Low", Due_date: time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC)}}
 	mockService.On("ExportTasks", mock.Anything).Return(tasks, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/tasks/export", nil)

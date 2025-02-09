@@ -46,7 +46,7 @@ func (j *JWTUtil) GenerateAccessToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to sign access token: %w", err)
 	}
-	return signedToken, nil
+	return "Bearer " + signedToken, nil
 }
 
 func (j *JWTUtil) GenerateRefreshToken(ctx context.Context) (string, error) {

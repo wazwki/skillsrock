@@ -1,17 +1,19 @@
 package domain
 
+import "time"
+
 type Task struct {
 	ID          int
 	Title       string
 	Description string
 	Status      string
 	Priority    string
-	Due_date    string
+	Due_date    time.Time
 	CreatedAt   string
 	UpdatedAt   string
 }
 
-type TaskDTO struct {
+type TaskResponse struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -22,27 +24,47 @@ type TaskDTO struct {
 	UpdatedAt   string `json:"updated_at"`
 }
 
-func TaskFromTaskDTO(taskDTO *TaskDTO) *Task {
+type TaskRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	Priority    string `json:"priority"`
+	Due_date    string `json:"due_date"`
+}
+
+func TaskFromTaskRequest(task *TaskRequest) *Task {
+	parsedTime, _ := time.Parse("2006-01-02 15:04:05", task.Due_date)
 	return &Task{
-		ID:          taskDTO.ID,
-		Title:       taskDTO.Title,
-		Description: taskDTO.Description,
-		Status:      taskDTO.Status,
-		Priority:    taskDTO.Priority,
-		Due_date:    taskDTO.Due_date,
-		CreatedAt:   taskDTO.CreatedAt,
-		UpdatedAt:   taskDTO.UpdatedAt,
+		Title:       task.Title,
+		Description: task.Description,
+		Status:      task.Status,
+		Priority:    task.Priority,
+		Due_date:    parsedTime,
 	}
 }
 
-func TaskDTOFromTask(task *Task) *TaskDTO {
-	return &TaskDTO{
+func TaskToTaskResponse(task *Task) *TaskResponse {
+	return &TaskResponse{
 		ID:          task.ID,
 		Title:       task.Title,
 		Description: task.Description,
 		Status:      task.Status,
 		Priority:    task.Priority,
-		Due_date:    task.Due_date,
+		Due_date:    task.Due_date.Format("2006-01-02 15:04:05"),
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+}
+
+func TaskFromTaskResponse(task *TaskResponse) *Task {
+	parsedTime, _ := time.Parse("2006-01-02 15:04:05", task.Due_date)
+	return &Task{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Status:      task.Status,
+		Priority:    task.Priority,
+		Due_date:    parsedTime,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
 	}
